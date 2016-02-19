@@ -62,6 +62,8 @@ public class DA_MessageHandler extends UnicastRemoteObject implements DA_Message
 
     // Should only be called by receiveMessage()
     public synchronized void deliverMessage(String message, HashMap<Integer, Integer> timestamp, HashMap<Integer, HashMap<Integer, Integer>> prevMessageVector, int source, boolean isBufferedMessage) {
+        System.out.println("(" + id + ") got message: " + message);
+
         // Update sent messages vector
         for (Map.Entry<Integer, HashMap<Integer, Integer>> entry : sentVector.entrySet()) {
             int k = entry.getKey();
@@ -128,13 +130,19 @@ public class DA_MessageHandler extends UnicastRemoteObject implements DA_Message
 
         try {
             remote = (DA_MessageHandler_RMI) Naming.lookup("rmi://localhost:1099/" + destination);
-        } catch (NotBoundException | MalformedURLException | RemoteException e) {}
+        } catch (NotBoundException | MalformedURLException | RemoteException e) {
+            e.printStackTrace();
+        }
 
         // Increment local clock
         clockVector.put(id, clockVector.get(id) + 1);
 
         // Send message with timestamp and sent vectors
-        remote.receiveMessage(message, clockVector, sentVector, id, false);
+        try {
+            remote.receiveMessage(message, clockVector, sentVector, id, false);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
 
         // Update sent vector to include this message
         sentVector.put(id, new HashMap<Integer,Integer>(clockVector));
