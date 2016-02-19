@@ -12,6 +12,16 @@ public class DA_MessageHandler extends UnicastRemoteObject implements DA_Message
 
     private int id;
 
+    private static smallerThan(Map<Integer, Integer> a, Map<Integer, Integer> b) {
+        for (Map.Entry<Integer, Integer> entry : a) {
+            if (b.contains(entry.getKey()) && entry.getValue() < b.get(entry.getKey())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public DA_MessageHandler(int id) throws RemoteException {
         super();
 
@@ -26,19 +36,25 @@ public class DA_MessageHandler extends UnicastRemoteObject implements DA_Message
     }
 
     // Called on a remote entity to send it a message
-    public synchronized void receiveMessage(String message, Map<Integer, Integer> timestamp, Map<Integer, Map<Integer, Integer>> prevMessageVector, int source, boolean alreadyBuffered) {
-        // TODO: Implement smaller than check
-        if (prevMessageVector.contains(id) && prevMessageVector.get(id) < clockVector) {
+    // Returns boolean indicating if the message has been delivered right away
+    public synchronized boolean receiveMessage(String message, Map<Integer, Integer> timestamp, Map<Integer, Map<Integer, Integer>> prevMessageVector, int source, boolean alreadyBuffered) {
+        if (prevMessageVector.contains(id) && smallerThan(prevMessageVector.get(id), clockVector)) {
             if (!alreadyBuffered) {
-                messageBuffer.add(new Message(message, timestamp, prevMessageVector, source));
+                synchronized (messageBuffer) {
+                    messageBuffer.add(new Message(message, timestamp, prevMessageVector, source));
+                }
             }
+
+            return false;
         } else {
-            deliverMessage(message, timestamp, prevMessageVector, source);
+            deliverMessage(message, timestamp, prevMessageVector, source, alreadyBuffered);
+
+            return true;
         }
     }
 
     // Should only be called by receiveMessage()
-    public void deliverMessage(String message, Map<Integer, Integer> timestamp, Map<Integer, Map<Integer, Integer>> prevMessageVector, int source) {
+    public synchronized void deliverMessage(String message, Map<Integer, Integer> timestamp, Map<Integer, Map<Integer, Integer>> prevMessageVector, int source, boolean isBufferedMessage) {
         // Update sent messages vector
         for (Map.Entry<Integer, Map<Integer, Integer>> entry : sentVector.entrySet()) {
             int k = entry.getKey();
@@ -70,10 +86,22 @@ public class DA_MessageHandler extends UnicastRemoteObject implements DA_Message
         // Update vector clock
         clockVector.put(id, clockVector.get(id) + 1);
 
-        // Try delivering buffered messages
-        for (Message m : messageBuffer) {
-            // TODO: Remove message from buffer
-            receiveMessage(m.message, m.clockVector, m.sentVector, m.id, true);
+        // If this is a new message, try delivering the previously buffered messages
+        if (!isBufferedMessage) {
+            synchronized (messageBuffer) {
+                List<Message> unprocessedMessages = new ArrayList<Message>();
+
+                for (Message m : messageBuffer) {
+                    boolean delivered = receiveMessage(m.message, m.clockVector, m.sentVector, m.id, true);
+
+                    if (!delivered) {
+                        unprocessedMessages.add(m);
+                    }
+                }
+
+                // Remove the delivered messages from the buffer
+                messageBuffer = unprocessedMessages;
+            }
         }
     }
 
