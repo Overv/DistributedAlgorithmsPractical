@@ -1,9 +1,11 @@
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
+import java.util.concurrent.*;
 
 public class DA_MessageHandler extends UnicastRemoteObject implements DA_MessageHandler_RMI {
-    private static int processCount = 5;
+    private static final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(20);
+    private static final Random random = new Random();
 
     private Map<Integer, Integer> clockVector;
     private Map<Integer, Map<Integer, Integer>> sentVector;
@@ -12,7 +14,7 @@ public class DA_MessageHandler extends UnicastRemoteObject implements DA_Message
 
     private int id;
 
-    private static smallerEqual(Map<Integer, Integer> a, Map<Integer, Integer> b) {
+    private static boolean smallerEqual(Map<Integer, Integer> a, Map<Integer, Integer> b) {
         for (Map.Entry<Integer, Integer> entry : a) {
             if (b.contains(entry.getKey()) && entry.getValue() <= b.get(entry.getKey())) {
                 return false;
@@ -72,7 +74,7 @@ public class DA_MessageHandler extends UnicastRemoteObject implements DA_Message
                     if (sentVector.get(k).contains(entry2.getKey())) {
                         int max = Math.max(
                             sentVector.get(k).get(entry2.getKey()),
-                            entry2.getValue();
+                            entry2.getValue()
                         );
 
                         sentVector.get(k).put(entry2.getKey(), max);
@@ -103,6 +105,16 @@ public class DA_MessageHandler extends UnicastRemoteObject implements DA_Message
                 messageBuffer = unprocessedMessages;
             }
         }
+    }
+
+    // Helper function to send message with a random delay up to maxDelay milliseconds
+    public void sendMessageDelayed(final String message, final int destination, final int maxDelay) {
+        executor.schedule(new Runnable() {
+            @Override
+            public void run() {
+                sendMessage(message, destination);
+            }
+        }, random.nextInt(maxDelay), TimeUnit.MILLISECONDS);
     }
 
     // Helper function to send a message to a remote entity
