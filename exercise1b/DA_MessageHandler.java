@@ -12,9 +12,9 @@ public class DA_MessageHandler extends UnicastRemoteObject implements DA_Message
 
     private int id;
 
-    private static smallerThan(Map<Integer, Integer> a, Map<Integer, Integer> b) {
+    private static smallerEqual(Map<Integer, Integer> a, Map<Integer, Integer> b) {
         for (Map.Entry<Integer, Integer> entry : a) {
-            if (b.contains(entry.getKey()) && entry.getValue() < b.get(entry.getKey())) {
+            if (b.contains(entry.getKey()) && entry.getValue() <= b.get(entry.getKey())) {
                 return false;
             }
         }
@@ -38,7 +38,7 @@ public class DA_MessageHandler extends UnicastRemoteObject implements DA_Message
     // Called on a remote entity to send it a message
     // Returns boolean indicating if the message has been delivered right away
     public synchronized boolean receiveMessage(String message, Map<Integer, Integer> timestamp, Map<Integer, Map<Integer, Integer>> prevMessageVector, int source, boolean alreadyBuffered) {
-        if (prevMessageVector.contains(id) && smallerThan(prevMessageVector.get(id), clockVector)) {
+        if (prevMessageVector.contains(id) && smallerEqual(prevMessageVector.get(id), clockVector)) {
             if (!alreadyBuffered) {
                 synchronized (messageBuffer) {
                     messageBuffer.add(new Message(message, timestamp, prevMessageVector, source));
