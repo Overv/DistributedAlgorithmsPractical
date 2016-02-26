@@ -12,8 +12,8 @@ public class Test {
             DA_MessageHandler obj1 = new DA_MessageHandler(1);
             DA_MessageHandler obj2 = new DA_MessageHandler(2);
 
-            obj2.sendMessageDelayed("first message", 1, 1000);
-            obj2.sendMessageDelayed("second message", 1, 10);
+            obj1.sendMessageDelayed("first message", 2, 1000);
+            obj1.sendMessageDelayed("second message", 2, 10);
         } catch (RemoteException | AlreadyBoundException | MalformedURLException e) {
             e.printStackTrace();
         }
