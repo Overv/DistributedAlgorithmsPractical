@@ -56,6 +56,10 @@ public class DA_MessageHandler extends UnicastRemoteObject implements DA_Message
         System.out.println("my clock:");
         printVector(clockVector);
 
+        if (!sentVector.containsKey(source)) {
+            sentVector.put(source, new HashMap<Integer, Integer>());
+        }
+
         try {
             System.out.println("delivery condition: " + prevMessageVector.containsKey(id) + " and " + smallerEqual(prevMessageVector.get(id), clockVector));
         } catch (Exception e) {
@@ -98,6 +102,15 @@ public class DA_MessageHandler extends UnicastRemoteObject implements DA_Message
         printVectorVector(sentVector);
         System.out.println("with vector in message:");
         printVectorVector(prevMessageVector);
+
+        // This is necessary, but not in the original algorithm...
+        for (Map.Entry<Integer, Integer> entry : timestamp.entrySet()) {
+            if (clockVector.containsKey(entry.getKey())) {
+                clockVector.put(entry.getKey(), Math.max(clockVector.get(entry.getKey()), entry.getValue()));
+            } else {
+                clockVector.put(entry.getKey(), entry.getValue());
+            }
+        }
 
         // Update sent messages vector
         for (Map.Entry<Integer, HashMap<Integer, Integer>> entry : prevMessageVector.entrySet()) {
