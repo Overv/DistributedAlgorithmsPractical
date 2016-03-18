@@ -49,9 +49,12 @@ public class DA_Component extends UnicastRemoteObject implements DA_Component_RM
 	}
 
 	// Requesting access to the CS
-	public void requestToken() {
+	public void requestToken() throws RemoteException {
+		// Pseudo-code for this "if" in book is wrong (see rule 1 in original paper)
 		if (S[i] == State.HOLDING) {
-			getP(i).sendRequest(i, N[i]);
+			//getP(i).sendRequest(i, N[i]);
+			sendToken(token);
+			return;
 		}
 
 		S[i] = State.REQUESTING;
@@ -66,7 +69,7 @@ public class DA_Component extends UnicastRemoteObject implements DA_Component_RM
 
 	// Receiving a REQUEST message
 	@Override
-	public void sendRequest(int j, int r) {
+	public void sendRequest(int j, int r) throws RemoteException {
 		switch (S[i]) {
 		case EXECUTING:
 		case OTHER:
@@ -95,7 +98,7 @@ public class DA_Component extends UnicastRemoteObject implements DA_Component_RM
 
 	// Receiving the token
 	@Override
-	public void sendToken(Token token) {
+	public void sendToken(Token token) throws RemoteException {
 		this.token = token;
 
 		S[i] = State.EXECUTING;

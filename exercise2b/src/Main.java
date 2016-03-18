@@ -13,7 +13,10 @@ public class Main {
             DA_Component site1 = new DA_Component(1);
 
             // Test request
+            site0.requestToken();
+            site0.requestToken();
             site1.requestToken();
+            site0.requestToken();
         } catch (RemoteException | AlreadyBoundException | MalformedURLException e) {
             e.printStackTrace();
         }
